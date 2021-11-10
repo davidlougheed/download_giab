@@ -1,5 +1,7 @@
 import argparse
 import csv
+import os.path
+
 import requests
 import subprocess
 import sys
@@ -9,6 +11,10 @@ from urllib.parse import urlparse
 
 
 DOWNLOAD_ATTEMPTS = 3
+
+
+def get_file_md5(path: str) -> bytes:
+    return subprocess.check_output(["md5sum", path]).split(b" ")[0]
 
 
 def download_file(file_url, md5: bytes, already_downloaded: dict):
@@ -21,14 +27,23 @@ def download_file(file_url, md5: bytes, already_downloaded: dict):
         file_name_parts = file_name.split(".")
         file_name_parts[0] += f"_{already_downloaded[file_name]}"
         file_name = ".".join(file_name_parts)
+
+    if os.path.exists(file_name):
+        h = get_file_md5(file_name)
+        if h == md5:
+            sys.stdout.write(f"Skipping {file_name} (already exists with correct checksum)")
+        else:
+            sys.stdout.write(f"Error: encountered conflicting existing file with name {file_name}\n")
+        return
+
     sys.stdout.write(f"Downloading and verifying {file_name}... ")
     sys.stdout.flush()
 
     attempts = 1
 
     while True:
-        subprocess.check_output(["wget", file_url], stderr=subprocess.PIPE)
-        h = subprocess.check_output(["md5sum", file_name]).split(b" ")[0]
+        subprocess.check_output(["wget", "-O", file_name, file_url], stderr=subprocess.PIPE)
+        h = get_file_md5(file_name)
 
         if h == md5:
             break
