@@ -8,12 +8,15 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 
-def download_file(file_url, md5):
+def download_file(file_url, md5: bytes):
     file_name = file_url.split("/")[-1]
     sys.stdout.write(f"Downloading and verifying {file_name}... ")
     sys.stdout.flush()
     subprocess.check_output(["wget", file_url], stderr=subprocess.PIPE)
-    h = subprocess.check_output(["md5sum", file_name])
+    h = subprocess.check_output(["md5sum", file_name]).split(b" ")[0]
+    if h != md5:
+        sys.stdout.write(f"hash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'")
+        exit(1)
     assert h == md5
     sys.stdout.write("done.")
     sys.stdout.flush()
@@ -53,10 +56,10 @@ def main(args: Optional[List[str]] = None):
 
     for row in index_reader:
         if "FASTQ" in row:
-            download_file(row["FASTQ"], row["FASTQ_MD5"])
+            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"))
 
         if "PAIRED_FASTQ" in row:
-            download_file(row["PAIRED_FASTQ"], row["PAIRED_FASTQ_MD5"])
+            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"))
 
 
 if __name__ == "__main__":
