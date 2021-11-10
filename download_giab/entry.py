@@ -15,10 +15,10 @@ def download_file(file_url, md5: bytes):
     subprocess.check_output(["wget", file_url], stderr=subprocess.PIPE)
     h = subprocess.check_output(["md5sum", file_name]).split(b" ")[0]
     if h != md5:
-        sys.stdout.write(f"hash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'")
+        sys.stdout.write(f"hash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'\n")
         exit(1)
     assert h == md5
-    sys.stdout.write("done.")
+    sys.stdout.write("done.\n")
     sys.stdout.flush()
 
 
