@@ -8,16 +8,32 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 
+DOWNLOAD_ATTEMPTS = 3
+
+
 def download_file(file_url, md5: bytes):
     file_name = file_url.split("/")[-1]
     sys.stdout.write(f"Downloading and verifying {file_name}... ")
     sys.stdout.flush()
-    subprocess.check_output(["wget", file_url], stderr=subprocess.PIPE)
-    h = subprocess.check_output(["md5sum", file_name]).split(b" ")[0]
-    if h != md5:
-        sys.stdout.write(f"hash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'\n")
-        exit(1)
-    assert h == md5
+
+    attempts = 1
+
+    while True:
+        subprocess.check_output(["wget", file_url], stderr=subprocess.PIPE)
+        h = subprocess.check_output(["md5sum", file_name]).split(b" ")[0]
+
+        if h == md5:
+            break
+
+        sys.stdout.write(f"\n\thash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'\n")
+        attempts += 1
+        if attempts > DOWNLOAD_ATTEMPTS:
+            sys.stdout.write("VERIFICATION FAILED (MULTIPLE HASH MISMATCH.)\n")
+            return
+
+        sys.stdout.write(f"\tretrying (attempt {attempts} of {DOWNLOAD_ATTEMPTS})\n")
+        subprocess.check_output(["rm", "-f", file_name])
+
     sys.stdout.write("done.\n")
     sys.stdout.flush()
 
