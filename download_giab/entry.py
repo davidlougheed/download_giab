@@ -36,13 +36,18 @@ def main(args: Optional[List[str]] = None):
             index = index_parts.scheme + "://" + index_parts.netloc + \
                 "/".join(path_parts[:3]) + "/raw/" + "/".join(path_parts[4:])
 
-    index_res = requests.get(index, allow_redirects=True)
+        index_res = requests.get(index, allow_redirects=True)
 
-    if index_res.status_code >= 300:
-        print(f"Error: index request returned non-2XX status code: {index_res.status_code}")
-        exit(1)
+        if index_res.status_code >= 300:
+            print(f"Error: index request returned non-2XX status code: {index_res.status_code}")
+            exit(1)
 
-    index_contents = index_res.content.decode("utf-8").split("\n")
+        index_contents = index_res.content.decode("utf-8").split("\n")
+
+    else:
+        with open(index, "r") as fh:
+            index_contents = fh.read()
+
     index_reader = csv.DictReader(index_contents, delimiter="\t")
 
     for row in index_reader:
