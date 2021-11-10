@@ -11,8 +11,16 @@ from urllib.parse import urlparse
 DOWNLOAD_ATTEMPTS = 3
 
 
-def download_file(file_url, md5: bytes):
+def download_file(file_url, md5: bytes, already_downloaded: dict):
     file_name = file_url.split("/")[-1]
+
+    if file_name not in already_downloaded:
+        already_downloaded[file_name] = 1
+    else:
+        already_downloaded[file_name] += 1
+        file_name_parts = file_name.split(".")
+        file_name_parts[0] += f"_{already_downloaded[file_name]}"
+        file_name = ".".join(file_name_parts)
     sys.stdout.write(f"Downloading and verifying {file_name}... ")
     sys.stdout.flush()
 
@@ -71,11 +79,15 @@ def main(args: Optional[List[str]] = None):
     index_reader = csv.DictReader(index_contents, delimiter="\t")
 
     for row in index_reader:
+        already_downloaded = {}
+
         if "FASTQ" in row:
-            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"))
+            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"),
+                          already_downloaded)
 
         if "PAIRED_FASTQ" in row:
-            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"))
+            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"),
+                          already_downloaded)
 
 
 if __name__ == "__main__":
