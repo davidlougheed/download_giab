@@ -30,11 +30,12 @@ def main(args: Optional[List[str]] = None):
     index = p_args.index
     index_parts = urlparse(index)
 
-    if index_parts.scheme in ("http", "https") and index_parts.netloc == "github.com":
-        path_parts = index_parts.path.split("/")
-        if path_parts[3] == "blob":  # Non-raw GH content
-            index = index_parts.scheme + "://" + index_parts.netloc + \
-                "/".join(path_parts[:3]) + "/raw/" + "/".join(path_parts[4:])
+    if index_parts.scheme in ("http", "https", "ftp"):
+        if index_parts.netloc == "github.com":
+            path_parts = index_parts.path.split("/")
+            if path_parts[3] == "blob":  # Non-raw GH content
+                index = index_parts.scheme + "://" + index_parts.netloc + \
+                    "/".join(path_parts[:3]) + "/raw/" + "/".join(path_parts[4:])
 
         index_res = requests.get(index, allow_redirects=True)
 
