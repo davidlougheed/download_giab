@@ -1,6 +1,7 @@
 # download_giab
 
-Utility Python package to download Genome-in-a-Bottle data from their index files.
+Utility Python package to download Genome-in-a-Bottle (GIAB) data from their 
+[index files](https://github.com/genome-in-a-bottle/giab_data_indexes/).
 
 This requires Python 3.6 or later.
 
