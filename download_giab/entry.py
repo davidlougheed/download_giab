@@ -5,12 +5,14 @@ import os.path
 import requests
 import subprocess
 import sys
+import time
 
 from typing import List, Optional
 from urllib.parse import urlparse
 
 
 DOWNLOAD_ATTEMPTS = 3
+DOWNLOAD_FAILURE_SLEEP = 15
 
 
 def get_file_md5(path: str) -> bytes:
@@ -42,16 +44,22 @@ def download_file(file_url, md5: bytes, already_downloaded: dict):
     attempts = 1
 
     while True:
-        subprocess.check_output(["wget", "-O", file_name, file_url], stderr=subprocess.PIPE)
-        h = get_file_md5(file_name)
+        try:
+            subprocess.check_output(["wget", "-O", file_name, file_url], stderr=subprocess.PIPE)
+            h = get_file_md5(file_name)
 
-        if h == md5:
-            break
+            if h == md5:
+                break
 
-        sys.stdout.write(f"\n\thash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'\n")
+            sys.stdout.write(f"\n\thash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'\n")
+
+        except subprocess.CalledProcessError:
+            sys.stdout.write(f"\n\twget returned non-0 exit status, sleeping for {DOWNLOAD_FAILURE_SLEEP} seconds...\n")
+            time.sleep(DOWNLOAD_FAILURE_SLEEP)
+
         attempts += 1
         if attempts > DOWNLOAD_ATTEMPTS:
-            sys.stdout.write("VERIFICATION FAILED (MULTIPLE HASH MISMATCH.)\n")
+            sys.stdout.write("DOWNLOAD FAILED (DOWNLOAD FAILURES OR HASH MISMATCHES.)\n")
             return
 
         sys.stdout.write(f"\tretrying (attempt {attempts} of {DOWNLOAD_ATTEMPTS})\n")
