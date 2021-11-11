@@ -110,6 +110,9 @@ def main(args: Optional[List[str]] = None):
         if "PAIRED_FASTQ" in row:
             download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded)
 
+        if "FASTA" in row:
+            download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded)
+
         if "FASTA_FASTQ" in row:
             download_file(row["FASTA_FASTQ"], bytes(row["FASTA_FASTQ_MD5"], encoding="ascii"), already_downloaded)
 
