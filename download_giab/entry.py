@@ -103,10 +103,28 @@ def main(args: Optional[List[str]] = None):
     index_reader = csv.DictReader(index_contents, delimiter="\t")
 
     for row in index_reader:
+        # sequences
+
         if "FASTQ" in row:
             download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded)
         if "PAIRED_FASTQ" in row:
             download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded)
+
+        if "FASTA_FASTQ" in row:
+            download_file(row["FASTA_FASTQ"], bytes(row["FASTA_FASTQ_MD5"], encoding="ascii"), already_downloaded)
+
+        if "XSQ" in row:
+            download_file(row["XSQ"], bytes(row["XSQ_MD5"], encoding="ascii"), already_downloaded)
+
+        # alignments
+
+        if "BAM" in row:
+            download_file(row["BAM"], bytes(row["BAM_MD5"], encoding="ascii"), already_downloaded)
+        if "BAI" in row:
+            download_file(row["BAI"], bytes(row["BAI_MD5"], encoding="ascii"), already_downloaded)
+
+        if "XMAP_CMAP" in row:
+            download_file(row["XMAP_CMAP"], bytes(row["XMAP_CMAP_MD5"], encoding="ascii"), already_downloaded)
 
 
 if __name__ == "__main__":
