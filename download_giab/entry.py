@@ -31,7 +31,7 @@ def download_file(file_url, md5: bytes, already_downloaded: dict):
     if os.path.exists(file_name):
         h = get_file_md5(file_name)
         if h == md5:
-            sys.stdout.write(f"Skipping {file_name} (already exists with correct checksum)")
+            sys.stdout.write(f"Skipping {file_name} (already exists with correct checksum)\n")
         else:
             sys.stdout.write(f"Error: encountered conflicting existing file with name {file_name}\n")
         return
@@ -91,18 +91,14 @@ def main(args: Optional[List[str]] = None):
         with open(index, "r") as fh:
             index_contents = fh.read()
 
+    already_downloaded = {}
     index_reader = csv.DictReader(index_contents, delimiter="\t")
 
     for row in index_reader:
-        already_downloaded = {}
-
         if "FASTQ" in row:
-            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"),
-                          already_downloaded)
-
+            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded)
         if "PAIRED_FASTQ" in row:
-            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"),
-                          already_downloaded)
+            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded)
 
 
 if __name__ == "__main__":
