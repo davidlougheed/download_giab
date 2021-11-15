@@ -45,7 +45,8 @@ def download_file(file_url, md5: bytes, already_downloaded: dict):
 
     while True:
         try:
-            subprocess.check_output(["wget", "-O", file_name, file_url], stderr=subprocess.PIPE)
+            subprocess.check_call(
+                ["wget", "-O", file_name, file_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             h = get_file_md5(file_name)
 
             if h == md5:
