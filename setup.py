@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="download_giab",
-    version="0.4.0",
+    version="0.5.0",
 
     python_requires="~=3.6",
     install_requires=[
