@@ -27,7 +27,7 @@ def download_file(file_url, md5: bytes, already_downloaded: dict):
     else:
         already_downloaded[file_name] += 1
         file_name_parts = file_name.split(".")
-        file_name_parts[0] += f"_{already_downloaded[file_name]}"
+        file_name_parts[0] += f"_{already_downloaded[file_name]:03}"
         file_name = ".".join(file_name_parts)
 
     if os.path.exists(file_name):
