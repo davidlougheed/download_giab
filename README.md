@@ -32,3 +32,7 @@ you can use `nohup` and `&`:
 ```bash
 nohup download_giab https://raw.githubusercontent.com/genome-in-a-bottle/giab_data_indexes/master/AshkenazimTrio/sequence.index.AJtrio_Illumina300X_wgs_07292015.HG002 &
 ```
+
+If you are downloading paired-end reads and want to concatenate all FASTQ files into two files,
+you can use the `--cat-paired` flag. This will generate two files per sample: `[sample]_1.fastq.gz`
+and `[sample]_2.fastq.gz`. If a sample ID is not present, the literal text `paired` will be used.

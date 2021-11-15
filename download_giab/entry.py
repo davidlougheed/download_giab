@@ -19,24 +19,25 @@ def get_file_md5(path: str) -> bytes:
     return subprocess.check_output(["md5sum", path]).split(b" ")[0]
 
 
-def download_file(file_url, md5: bytes, already_downloaded: dict):
+def download_file(file_url, md5: bytes, already_downloaded: dict, cat_to: Optional[str] = None):
     file_name = file_url.split("/")[-1]
 
-    if file_name not in already_downloaded:
-        already_downloaded[file_name] = 1
-    else:
-        already_downloaded[file_name] += 1
-        file_name_parts = file_name.split(".")
-        file_name_parts[0] += f"_{already_downloaded[file_name]:03}"
-        file_name = ".".join(file_name_parts)
-
-    if os.path.exists(file_name):
-        h = get_file_md5(file_name)
-        if h == md5:
-            sys.stdout.write(f"Skipping {file_name} (already exists with correct checksum)\n")
+    if cat_to:
+        if file_name not in already_downloaded:
+            already_downloaded[file_name] = 1
         else:
-            sys.stdout.write(f"Error: encountered conflicting existing file with name {file_name}\n")
-        return
+            already_downloaded[file_name] += 1
+            file_name_parts = file_name.split(".")
+            file_name_parts[0] += f"_{already_downloaded[file_name]:03}"
+            file_name = ".".join(file_name_parts)
+
+        if os.path.exists(file_name):
+            h = get_file_md5(file_name)
+            if h == md5:
+                sys.stdout.write(f"Skipping {file_name} (already exists with correct checksum)\n")
+            else:
+                sys.stdout.write(f"Error: encountered conflicting existing file with name {file_name}\n")
+            return
 
     sys.stdout.write(f"Downloading and verifying {file_name}... ")
     sys.stdout.flush()
@@ -66,6 +67,10 @@ def download_file(file_url, md5: bytes, already_downloaded: dict):
         sys.stdout.write(f"\tretrying (attempt {attempts} of {DOWNLOAD_ATTEMPTS})\n")
         subprocess.check_output(["rm", "-f", file_name])
 
+    if cat_to:
+        subprocess.check_call(["cat", file_name, ">>", cat_to], shell=True)
+        subprocess.check_output(["rm", "-f", file_name])
+
     sys.stdout.write("done.\n")
     sys.stdout.flush()
 
@@ -75,6 +80,12 @@ def main(args: Optional[List[str]] = None):
         description="Utility Python package to download Genome-in-a-Bottle data from their index files.")
 
     parser.add_argument("index", help="Index file or URL to get data links and hashes from.")
+    parser.add_argument(
+        "--cat-paired",
+        action="store_true",
+        help="Concatenates paired-end read FASTQ files into two files (row 1 in file 1 has a pair in row 1 of file 2) "
+             "instead of downloading them individually."
+    )
 
     p_args = parser.parse_args(args or sys.argv[1:])
 
@@ -106,10 +117,16 @@ def main(args: Optional[List[str]] = None):
     for row in index_reader:
         # sequences
 
+        sample: Optional[str] = row.get("NIST_SAMPLE_NAME", "paired")
+        cat_out_1 = f"{sample}_1.fastq.gz" if p_args.cat_paired else None
+        cat_out_2 = f"{sample}_2.fastq.gz" if p_args.cat_paired else None
+
         if "FASTQ" in row:
-            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded)
+            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded,
+                          cat_to=cat_out_1)
         if "PAIRED_FASTQ" in row:
-            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded)
+            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded,
+                          cat_to=cat_out_2)
 
         if "FASTA" in row:
             download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded)
