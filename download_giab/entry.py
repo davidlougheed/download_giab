@@ -22,7 +22,7 @@ def get_file_md5(path: str) -> bytes:
 def download_file(file_url, md5: bytes, already_downloaded: dict, cat_to: Optional[str] = None):
     file_name = file_url.split("/")[-1]
 
-    if cat_to:
+    if not cat_to:
         if file_name not in already_downloaded:
             already_downloaded[file_name] = 1
         else:
