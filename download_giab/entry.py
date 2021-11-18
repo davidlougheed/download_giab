@@ -146,7 +146,7 @@ def main(args: Optional[List[str]] = None):
                     cat_to=cat_out_2)
 
             if f1 and f2 and p_args.store_paired_names and f1.replace("_R1_", "_R2_") == f2:
-                readset_name = f1.replace('_R1_', '').rstrip('.gz').rstrip('.fastq')
+                readset_name = f1.replace('_R1', '').rstrip('.gz').rstrip('.fastq')
                 paired_names.write(f"{f1}\t{f2}\t{readset_name}\n")
                 paired_names.flush()
 
