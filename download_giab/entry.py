@@ -68,7 +68,7 @@ def download_file(file_url, md5: bytes, already_downloaded: dict, cat_to: Option
         subprocess.check_output(["rm", "-f", file_name])
 
     if cat_to:
-        subprocess.check_call(["cat", file_name, ">>", cat_to], shell=True)
+        subprocess.check_call(f"cat '{file_name}' >> '{cat_to}'", shell=True)
         subprocess.check_output(["rm", "-f", file_name])
 
     sys.stdout.write("done.\n")
