@@ -147,7 +147,8 @@ def main(args: Optional[List[str]] = None):
 
             if f1 and f2 and p_args.store_paired_names and f1.replace("_R1_", "_R2_") == f2:
                 readset_name = f1.replace('_R1_', '').rstrip('.gz').rstrip('.fastq')
-                paired_names.write(f"{f1}\t{f2}\t{readset_name}")
+                paired_names.write(f"{f1}\t{f2}\t{readset_name}\n")
+                paired_names.flush()
 
             if "FASTA" in row:
                 download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded)
