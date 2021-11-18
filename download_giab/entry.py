@@ -74,6 +74,8 @@ def download_file(file_url, md5: bytes, already_downloaded: dict, cat_to: Option
     sys.stdout.write("done.\n")
     sys.stdout.flush()
 
+    return file_name
+
 
 def main(args: Optional[List[str]] = None):
     parser = argparse.ArgumentParser(
@@ -84,7 +86,13 @@ def main(args: Optional[List[str]] = None):
         "--cat-paired",
         action="store_true",
         help="Concatenates paired-end read FASTQ files into two files (row 1 in file 1 has a pair in row 1 of file 2) "
-             "instead of downloading them individually."
+             "instead of downloading them individually. Won't work if the paired files are not the same length."
+    )
+    parser.add_argument(
+        "--store-paired-names",
+        action="store_true",
+        help="Gets the base names of paired-end read FASTQ files (for processing later) and puts them in a file called"
+             "'paired_names.txt'"
     )
 
     p_args = parser.parse_args(args or sys.argv[1:])
@@ -114,38 +122,55 @@ def main(args: Optional[List[str]] = None):
     already_downloaded = {}
     index_reader = csv.DictReader(index_contents, delimiter="\t")
 
-    for row in index_reader:
-        # sequences
+    paired_names = None
+    try:
+        if p_args.store_paired_names:
+            paired_names = open("paired_names.txt", "w")
 
-        sample: Optional[str] = row.get("NIST_SAMPLE_NAME", "paired")
-        cat_out_1 = f"{sample}_1.fastq.gz" if p_args.cat_paired else None
-        cat_out_2 = f"{sample}_2.fastq.gz" if p_args.cat_paired else None
+        for row in index_reader:
+            # sequences
 
-        if "FASTQ" in row:
-            download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded,
-                          cat_to=cat_out_1)
-        if "PAIRED_FASTQ" in row:
-            download_file(row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded,
-                          cat_to=cat_out_2)
+            sample: Optional[str] = row.get("NIST_SAMPLE_NAME", "paired")
+            cat_out_1 = f"{sample}_1.fastq.gz" if p_args.cat_paired else None
+            cat_out_2 = f"{sample}_2.fastq.gz" if p_args.cat_paired else None
 
-        if "FASTA" in row:
-            download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded)
+            f1 = None
+            f2 = None
 
-        if "FASTA_FASTQ" in row:
-            download_file(row["FASTA_FASTQ"], bytes(row["FASTA_FASTQ_MD5"], encoding="ascii"), already_downloaded)
+            if "FASTQ" in row:
+                f1 = download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded,
+                                   cat_to=cat_out_1)
+            if "PAIRED_FASTQ" in row:
+                f2 = download_file(
+                    row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded,
+                    cat_to=cat_out_2)
 
-        if "XSQ" in row:
-            download_file(row["XSQ"], bytes(row["XSQ_MD5"], encoding="ascii"), already_downloaded)
+            if f1 and f2 and p_args.store_paired_names and f1.replace("_R1_", "_R2_") == f2:
+                readset_name = f1.replace('_R1_', '').rstrip('.gz').rstrip('.fastq')
+                paired_names.write(f"{f1}\t{f2}\t{readset_name}")
 
-        # alignments
+            if "FASTA" in row:
+                download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded)
 
-        if "BAM" in row:
-            download_file(row["BAM"], bytes(row["BAM_MD5"], encoding="ascii"), already_downloaded)
-        if "BAI" in row:
-            download_file(row["BAI"], bytes(row["BAI_MD5"], encoding="ascii"), already_downloaded)
+            if "FASTA_FASTQ" in row:
+                download_file(row["FASTA_FASTQ"], bytes(row["FASTA_FASTQ_MD5"], encoding="ascii"), already_downloaded)
 
-        if "XMAP_CMAP" in row:
-            download_file(row["XMAP_CMAP"], bytes(row["XMAP_CMAP_MD5"], encoding="ascii"), already_downloaded)
+            if "XSQ" in row:
+                download_file(row["XSQ"], bytes(row["XSQ_MD5"], encoding="ascii"), already_downloaded)
+
+            # alignments
+
+            if "BAM" in row:
+                download_file(row["BAM"], bytes(row["BAM_MD5"], encoding="ascii"), already_downloaded)
+            if "BAI" in row:
+                download_file(row["BAI"], bytes(row["BAI_MD5"], encoding="ascii"), already_downloaded)
+
+            if "XMAP_CMAP" in row:
+                download_file(row["XMAP_CMAP"], bytes(row["XMAP_CMAP_MD5"], encoding="ascii"), already_downloaded)
+
+    finally:
+        if paired_names:
+            paired_names.close()
 
 
 if __name__ == "__main__":

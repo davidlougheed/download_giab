@@ -36,3 +36,9 @@ nohup download_giab https://raw.githubusercontent.com/genome-in-a-bottle/giab_da
 If you are downloading paired-end reads and want to concatenate all FASTQ files into two files,
 you can use the `--cat-paired` flag. This will generate two files per sample: `[sample]_1.fastq.gz`
 and `[sample]_2.fastq.gz`. If a sample ID is not present, the literal text `paired` will be used.
+
+This will not work for some tools (e.g. `bwa mem`) if the FASTQ files in a pair-set are of 
+different lengths.
+
+If instead you want to store the read pairs + a suggested common name, use the `--store-paired-names`
+flag. This will write to a file called `paired_names.txt`.
