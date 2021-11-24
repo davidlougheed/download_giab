@@ -42,3 +42,6 @@ different lengths.
 
 If instead you want to store the read pairs + a suggested common name, use the `--store-paired-names`
 flag. This will write to a file called `paired_names.txt`.
+
+To filter what files are downloaded, the `--filter` flag can be provided with a case insensitive
+string or regular expression (in Python syntax.)

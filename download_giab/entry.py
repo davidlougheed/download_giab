@@ -1,7 +1,7 @@
 import argparse
 import csv
 import os.path
-
+import re
 import requests
 import subprocess
 import sys
@@ -19,7 +19,8 @@ def get_file_md5(path: str) -> bytes:
     return subprocess.check_output(["md5sum", path]).split(b" ")[0]
 
 
-def download_file(file_url, md5: bytes, already_downloaded: dict, cat_to: Optional[str] = None):
+def download_file(file_url, md5: bytes, already_downloaded: dict, file_filter: re.Pattern,
+                  cat_to: Optional[str] = None):
     file_name = file_url.split("/")[-1]
 
     if not cat_to:
@@ -83,6 +84,13 @@ def main(args: Optional[List[str]] = None):
 
     parser.add_argument("index", help="Index file or URL to get data links and hashes from.")
     parser.add_argument(
+        "--filter",
+        type=str,
+        default="*",
+        help="If specified, filters file names to those which contain this substring. Case-insensitive "
+             "regular expression."
+    )
+    parser.add_argument(
         "--cat-paired",
         action="store_true",
         help="Concatenates paired-end read FASTQ files into two files (row 1 in file 1 has a pair in row 1 of file 2) "
@@ -99,6 +107,8 @@ def main(args: Optional[List[str]] = None):
 
     index = p_args.index
     index_parts = urlparse(index)
+
+    file_filter = re.compile(p_args.filter, re.IGNORECASE)
 
     if index_parts.scheme in ("http", "https", "ftp"):
         if index_parts.netloc == "github.com":
@@ -139,11 +149,11 @@ def main(args: Optional[List[str]] = None):
 
             if "FASTQ" in row:
                 f1 = download_file(row["FASTQ"], bytes(row["FASTQ_MD5"], encoding="ascii"), already_downloaded,
-                                   cat_to=cat_out_1)
+                                   file_filter, cat_to=cat_out_1)
             if "PAIRED_FASTQ" in row:
                 f2 = download_file(
                     row["PAIRED_FASTQ"], bytes(row["PAIRED_FASTQ_MD5"], encoding="ascii"), already_downloaded,
-                    cat_to=cat_out_2)
+                    file_filter, cat_to=cat_out_2)
 
             if f1 and f2 and p_args.store_paired_names and f1.replace("_R1_", "_R2_") == f2:
                 readset_name = f1.replace('_R1', '').rstrip('.gz').rstrip('.fastq')
@@ -151,23 +161,25 @@ def main(args: Optional[List[str]] = None):
                 paired_names.flush()
 
             if "FASTA" in row:
-                download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded)
+                download_file(row["FASTA"], bytes(row["FASTA_MD5"], encoding="ascii"), already_downloaded, file_filter)
 
             if "FASTA_FASTQ" in row:
-                download_file(row["FASTA_FASTQ"], bytes(row["FASTA_FASTQ_MD5"], encoding="ascii"), already_downloaded)
+                download_file(row["FASTA_FASTQ"], bytes(row["FASTA_FASTQ_MD5"], encoding="ascii"), already_downloaded,
+                              file_filter)
 
             if "XSQ" in row:
-                download_file(row["XSQ"], bytes(row["XSQ_MD5"], encoding="ascii"), already_downloaded)
+                download_file(row["XSQ"], bytes(row["XSQ_MD5"], encoding="ascii"), already_downloaded, file_filter)
 
             # alignments
 
             if "BAM" in row:
-                download_file(row["BAM"], bytes(row["BAM_MD5"], encoding="ascii"), already_downloaded)
+                download_file(row["BAM"], bytes(row["BAM_MD5"], encoding="ascii"), already_downloaded, file_filter)
             if "BAI" in row:
-                download_file(row["BAI"], bytes(row["BAI_MD5"], encoding="ascii"), already_downloaded)
+                download_file(row["BAI"], bytes(row["BAI_MD5"], encoding="ascii"), already_downloaded, file_filter)
 
             if "XMAP_CMAP" in row:
-                download_file(row["XMAP_CMAP"], bytes(row["XMAP_CMAP_MD5"], encoding="ascii"), already_downloaded)
+                download_file(row["XMAP_CMAP"], bytes(row["XMAP_CMAP_MD5"], encoding="ascii"), already_downloaded,
+                              file_filter)
 
     finally:
         if paired_names:
