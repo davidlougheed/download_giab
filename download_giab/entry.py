@@ -23,6 +23,11 @@ def download_file(file_url, md5: bytes, already_downloaded: dict, file_filter: r
                   cat_to: Optional[str] = None):
     file_name = file_url.split("/")[-1]
 
+    if not file_filter.match(file_name):
+        sys.stdout.write(f"Skipping {file_name} (does not match filter)\n")
+        sys.stdout.flush()
+        return
+
     if not cat_to:
         if file_name not in already_downloaded:
             already_downloaded[file_name] = 1
