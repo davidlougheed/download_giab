@@ -16,11 +16,12 @@ DOWNLOAD_FAILURE_SLEEP = 15
 
 
 def get_file_md5(path: str) -> bytes:
-    return subprocess.check_output(["md5sum", path]).split(b" ")[0]
+    return subprocess.check_output(["md5sum", path]).split(b" ")[0].strip()
 
 
 def download_file(file_url, md5: bytes, already_downloaded: dict, file_filter: re.Pattern,
                   cat_to: Optional[str] = None):
+    md5 = md5.strip()
     file_name = file_url.split("/")[-1]
 
     if not file_filter.match(file_name):
@@ -59,7 +60,8 @@ def download_file(file_url, md5: bytes, already_downloaded: dict, file_filter: r
             if h == md5:
                 break
 
-            sys.stdout.write(f"\n\thash mismatch: downloaded file hash '{h}' != recorded hash '{md5}'\n")
+            sys.stdout.write(f"\n\thash mismatch: downloaded file hash '{h.decode('ascii')}' != recorded hash "
+                             f"'{md5.decode('ascii')}'\n")
 
         except subprocess.CalledProcessError:
             sys.stdout.write(f"\n\twget returned non-0 exit status, sleeping for {DOWNLOAD_FAILURE_SLEEP} seconds...\n")
