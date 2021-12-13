@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 
+from datetime import datetime
 from typing import List, Optional
 from urllib.parse import urlparse
 
@@ -86,6 +87,8 @@ def download_file(file_url, md5: bytes, already_downloaded: dict, file_filter: r
 
 
 def main(args: Optional[List[str]] = None):
+    start = datetime.now()
+    
     parser = argparse.ArgumentParser(
         description="Utility Python package to download Genome-in-a-Bottle data from their index files.")
 
@@ -191,6 +194,10 @@ def main(args: Optional[List[str]] = None):
     finally:
         if paired_names:
             paired_names.close()
+
+    end = datetime.now()
+    sys.stdout.print(f"Finished in {(end - start).total_seconds()} seconds.\n")
+    sys.stdout.flush()
 
 
 if __name__ == "__main__":
